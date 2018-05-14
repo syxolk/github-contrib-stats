@@ -22,7 +22,7 @@ def main():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Github Stats: Issues and Pull Requests for each Contributor")
+    parser = argparse.ArgumentParser(description="Github Contrib Stats: Count issues and pull requests for each contributor")
     parser.add_argument("--token", required=True, help="GitHub API token")
     parser.add_argument("--owner", required=True, help="Repository owner")
     parser.add_argument("--name", required=True, help="Repository name")
