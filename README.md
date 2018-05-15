@@ -13,14 +13,15 @@ sudo pip3 install -r requirements
 
 ## Usage
 ```
-usage: github-contrib-stats.py [-h] --token TOKEN --owner OWNER --name NAME
+usage: github-contrib-stats.py [-h] [--token TOKEN] --owner OWNER --name NAME
                                [--show-closed]
 
 Github Contrib Stats: Count issues and pull requests for each contributor
 
 optional arguments:
   -h, --help     show this help message and exit
-  --token TOKEN  GitHub API token
+  --token TOKEN  GitHub API token. Can also be set as an environment variable:
+                 GITHUB_API_TOKEN
   --owner OWNER  Repository owner
   --name NAME    Repository name
   --show-closed  Count closed issues. This may be really SLOW.

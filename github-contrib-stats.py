@@ -2,6 +2,8 @@
 import argparse
 import requests
 from tqdm import tqdm
+import sys
+import os
 
 
 FORMAT_STRING = "{name: <{fill}}"
@@ -9,15 +11,12 @@ FORMAT_STRING = "{name: <{fill}}"
 def main():
     args = parse_args()
 
-    token = args.token
-
     stats = Stats(["OPENED", "CLOSED", "PR"] if args.show_closed else ["OPENED", "PR"])
-    print("Get all issues...")
-    issues, pull_requests = get_all_issues_and_pr(token, issues_url(args.owner, args.name))
+    issues, pull_requests = get_all_issues_and_pr(args.token, issues_url(args.owner, args.name))
 
     process_issues(issues, stats)
     if args.show_closed:
-        process_closed_issues(token, issues, stats)
+        process_closed_issues(args.token, issues, stats)
     process_pull_requests(pull_requests, stats)
 
     stats.dump()
@@ -25,11 +24,19 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Github Contrib Stats: Count issues and pull requests for each contributor")
-    parser.add_argument("--token", required=True, help="GitHub API token")
+    parser.add_argument("--token",
+        help="GitHub API token. Can also be set as an environment variable: GITHUB_API_TOKEN",
+        default=os.environ.get("GITHUB_API_TOKEN"))
     parser.add_argument("--owner", required=True, help="Repository owner")
     parser.add_argument("--name", required=True, help="Repository name")
     parser.add_argument("--show-closed", action="store_true", help="Count closed issues. This may be really SLOW.")
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if not args.token:
+        parser.print_usage()
+        sys.exit(1)
+
+    return args
 
 
 def issues_url(owner, repo):
