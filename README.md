@@ -1,6 +1,6 @@
 # Github Contributor Stats
 
-`github-contributor-stats` is a small Python script that collects statistics
+`github-contrib-stats` is a small Python script that collects statistics
 on how many issues were opened and closed as well as opened pull requests
 for every contributor for a specific repository.
 
@@ -14,6 +14,7 @@ sudo pip3 install -r requirements
 ## Usage
 ```
 usage: github-contrib-stats.py [-h] --token TOKEN --owner OWNER --name NAME
+                               [--show-closed]
 
 Github Contrib Stats: Count issues and pull requests for each contributor
 
@@ -22,6 +23,7 @@ optional arguments:
   --token TOKEN  GitHub API token
   --owner OWNER  Repository owner
   --name NAME    Repository name
+  --show-closed  Count closed issues. This may be really SLOW.
 ```
 
 ## How to get a GitHub API token

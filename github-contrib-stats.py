@@ -1,24 +1,26 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import argparse
 import requests
 from tqdm import tqdm
 
 
-FORMAT_STRING = "{name: <{fill}}  {author: >6}  {closed: >6}  {pr: >5}"
-
+FORMAT_STRING = "{name: <{fill}}"
 
 def main():
     args = parse_args()
 
     token = args.token
-    stats = Stats()
+
+    stats = Stats(["OPENED", "CLOSED", "PR"] if args.show_closed else ["OPENED", "PR"])
     print("Get all issues...")
     issues, pull_requests = get_all_issues_and_pr(token, issues_url(args.owner, args.name))
 
-    process_issues(token, issues, stats)
+    process_issues(issues, stats)
+    if args.show_closed:
+        process_closed_issues(token, issues, stats)
     process_pull_requests(pull_requests, stats)
 
-    print(stats)
+    stats.dump()
 
 
 def parse_args():
@@ -26,6 +28,7 @@ def parse_args():
     parser.add_argument("--token", required=True, help="GitHub API token")
     parser.add_argument("--owner", required=True, help="Repository owner")
     parser.add_argument("--name", required=True, help="Repository name")
+    parser.add_argument("--show-closed", action="store_true", help="Count closed issues. This may be really SLOW.")
     return parser.parse_args()
 
 
@@ -55,7 +58,12 @@ def get_all_issues_and_pr(token, api_url):
     return (issues, pull_requests)
 
 
-def process_issues(token, issues, stats):
+def process_issues(issues, stats):
+    for i in issues:
+        stats.count_action(i["user"]["login"], "OPENED")
+
+
+def process_closed_issues(token, issues, stats):
     for i in tqdm(issues):
         process_single_issue(token, i["url"], stats)
 
@@ -65,19 +73,19 @@ def process_single_issue(token, api_url, stats):
         "Authorization": "token " + token
     }).json()
 
-    stats.count_action(r["user"]["login"], "author")
     if r["closed_by"] is not None:
-        stats.count_action(r["closed_by"]["login"], "closed")
+        stats.count_action(r["closed_by"]["login"], "CLOSED")
 
 
 def process_pull_requests(pull_requests, stats):
     for pr in pull_requests:
-        stats.count_action(pr["user"]["login"], "pr")
+        stats.count_action(pr["user"]["login"], "PR")
 
 
 class Stats:
-    def __init__(self):
+    def __init__(self, columns):
         self._data = {}
+        self._columns = columns
 
     def count_action(self, user, action):
         if user not in self._data:
@@ -93,26 +101,25 @@ class Stats:
             return 0
         return self._data[user][action]
 
-    def __str__(self):
+    def dump(self):
         longest_name_len = max((len(x) for x in self._data))
 
         lines = []
-        lines.append(FORMAT_STRING.format(
+        print(FORMAT_STRING.format(
             name="LOGIN",
-            author="OPENED",
-            closed="CLOSED",
-            pr="PR",
             fill=longest_name_len,
-        ))
+        ), end="")
+        for c in self._columns:
+            print("  {: >6}".format(c), end="")
+        print()
         for name in self._data:
-            lines.append(FORMAT_STRING.format(
+            print(FORMAT_STRING.format(
                 name=name,
-                author=self.get_count(name, "author"),
-                closed=self.get_count(name, "closed"),
-                pr=self.get_count(name, "pr"),
                 fill=longest_name_len,
-            ))
-        return "\n".join(lines)
+            ), end="")
+            for c in self._columns:
+                print("  {: >6}".format(self.get_count(name, c)), end="")
+            print()
 
 
 if __name__ == "__main__":
